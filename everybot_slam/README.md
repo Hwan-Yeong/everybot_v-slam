@@ -54,13 +54,12 @@ RTAB-Map 기반 hybrid 3D SLAM (2D LiDAR + 전방 RGB-D camera).
 ## 실행 순서
 
 ```bash
-# [Jetson] 카메라 driver 실행 후 (토픽 기본값이 M4.51s 에 맞춰져 있음)
-ros2 launch everybot_slam jetson_rgbd_sync.launch.py
+# [Jetson] depth camera driver 만 실행 (rgbd_sync 는 AMR 에서 실행됨)
 
 # [RK3588] 플랫폼 bringup (odom/TF/scan/sensor_manager)
 ros2 launch everybot_bringup bringup.launch.py
 
-# [RK3588] 맵핑 (새 맵: -d 로 DB 초기화)
+# [RK3588] 맵핑 (새 맵: -d 로 DB 초기화) — rgbd_sync 포함 실행됨
 ros2 launch everybot_slam slam.launch.py rtabmap_args:="-d"
 #   → 조이스틱/수동 주행으로 맵 작성. /map 과 cloud_map 을 rviz2 로 확인
 #   → 시작점 부근 재방문(loop closure) 후 종료하면 DB 에 자동 저장

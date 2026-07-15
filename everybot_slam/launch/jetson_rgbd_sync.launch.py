@@ -1,8 +1,8 @@
-"""Jetson 측: RGB + Depth + CameraInfo -> 단일 RGBDImage 토픽 동기화.
+"""[옵션] Jetson 측: RGB + Depth + CameraInfo -> 단일 RGBDImage 토픽 동기화.
 
-이 launch 는 **Jetson 보드에서** 실행한다 (depth camera driver 와 같은 보드).
-rgb/depth 를 같은 클럭에서 짝지어 하나의 토픽으로 묶은 뒤 네트워크로 전송해야
-RK3588 쪽에서 클럭 차이/지터로 인한 sync 실패가 없다.
+기본 구성에서는 rgbd_sync 가 AMR(RK3588)의 slam.launch.py 안에서 실행되므로
+이 파일은 필요 없다. 네트워크로 나가는 토픽 수를 줄이고 싶을 때만
+Jetson 에서 이걸 실행하고, AMR 쪽은 slam.launch.py rgbd_sync:=false 로 끈다.
 
 사용법 (토픽명은 M4.51s 드라이버에 맞게 인자로 조정):
   ros2 launch everybot_slam jetson_rgbd_sync.launch.py \
