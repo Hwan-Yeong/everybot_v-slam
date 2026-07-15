@@ -1,0 +1,22 @@
+# 외부 의존 소스 목록 (vcstool 형식)
+#
+# 사용법 (개발자): src/ 에서  vcs import < deps.repos
+#
+# [버전 고정 규칙]
+# - version 은 "개발/검증 완료 시점의 commit hash 또는 릴리즈 태그" 로 고정한다.
+# - rtabmap 업데이트가 필요하면: version 을 임시로 브랜치(master/humble-devel)로
+#   바꿔 pull -> 빌드/검증 -> 아래 명령으로 다시 hash 고정 -> deps.repos 커밋.
+#     cd src && vcs export --exact rtabmap rtabmap_ros
+#   (출력된 version 값을 이 파일에 반영)
+#
+# 최초 개발 시점(26.07)은 아직 검증 전이라 브랜치로 지정되어 있음.
+# 첫 빌드/실기 검증 완료 후 반드시 hash 로 고정할 것. <- TODO
+repositories:
+  rtabmap:
+    type: git
+    url: https://github.com/introlab/rtabmap.git
+    version: master        # TODO: 검증 후 commit hash 고정
+  rtabmap_ros:
+    type: git
+    url: https://github.com/introlab/rtabmap_ros.git
+    version: humble-devel  # TODO: 검증 후 commit hash 고정

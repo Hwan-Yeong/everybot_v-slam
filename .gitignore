@@ -3,3 +3,7 @@ install/
 log/
 
 .vscode/
+
+# 외부 오픈소스 (커밋 금지 - README.md / deps.repos 참고)
+rtabmap/
+rtabmap_ros/
