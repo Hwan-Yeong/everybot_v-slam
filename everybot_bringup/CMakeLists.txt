@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.5)
+project(everybot_bringup)
+
+set(CMAKE_BUILD_TYPE Release) #set(CMAKE_BUILD_TYPE Debug) 
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(serial REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(everybot_custom_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+
+# Include directories
+include_directories(
+  include  # Include your project's header directory
+  ${ament_INCLUDE_DIRS}
+)
+
+ament_export_dependencies(rosidl_default_runtime)
+
+add_executable(everybot_bringup src/uart_communication.cpp src/uart_helpers.cpp)
+ament_target_dependencies(everybot_bringup
+  rclcpp
+  tf2_geometry_msgs
+  std_msgs
+  sensor_msgs
+  nav_msgs
+  geometry_msgs
+  serial
+  everybot_custom_msgs
+  nav2_msgs
+  builtin_interfaces
+)
+
+# Install targets (adjust DESTINATION paths if necessary)
+install(TARGETS
+  everybot_bringup
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS
+  DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME})
+
+install(DIRECTORY launch urdf
+  DESTINATION share/${PROJECT_NAME})
+
+ament_package()

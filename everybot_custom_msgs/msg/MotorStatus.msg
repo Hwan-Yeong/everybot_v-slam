@@ -1,0 +1,13 @@
+int32 left_motor_encoder
+int32 right_motor_encoder
+int16 left_motor_current
+int16 right_motor_current
+int16 left_motor_rpm
+int16 right_motor_rpm
+uint8 left_motor_temperature
+uint8 right_motor_temperature
+uint8 left_motor_status
+uint8 right_motor_status
+uint8 left_motor_type
+uint8 right_motor_type
+uint8 motor_mode

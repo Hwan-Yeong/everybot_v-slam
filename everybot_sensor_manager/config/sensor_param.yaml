@@ -1,0 +1,271 @@
+everybot_sensor_manager:
+  ros__parameters:
+    target_frame: "map" # "map" or "base_link"
+    output_topic_prefix: "sensor_to_pointcloud/"
+
+    # 노드가 실제로 구독하는 입력 스트림 토픽 (converter 와 독립).
+    # 키 하나 = 구독 1개. 하나의 스트림을 여러 converter 가 공유할 수 있고,
+    # 아래 sensors 에서 converter 를 켜고/꺼도 구독은 그대로 유지된다.
+    input_topics:
+      tof: "/tof_data"                      # tof_mono, tof_multi
+      camera: "/camera_data"                # camera
+      bottom_ir: "/bottom_ir_data"          # bottom_ir
+      collision: "/collision_detected"      # collision_front, collision_rear
+      depth_img: "/camera/depth/image_raw"     # depth_camera_image
+      depth_info: "/camera/depth/camera_info"  # depth_camera_info
+
+    sensors:
+      tof_mono:
+        output_topic_suffix: "tof/mono"
+        publish_rate_ms: 10
+        use: false # 센서 모듈 사용 여부
+        enable_target_frame_cloud: false # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: false # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: 30.0 # 마지막 데이터 수신 후 타임아웃으로 간주하고 내부 상태 리셋하는 기준 시간
+        extrinsics:
+          tf_frame:
+            parent: "base_link"
+            child: "tof_mono_link"
+          translation:
+            x: 0.0942
+            y: 0.0
+            z: 0.56513
+          rotation: # deg
+            roll: 0.0
+            pitch: -39.0 # (-)가 들리는 방향
+            yaw: 0.0
+
+      tof_multi: # multizone tof reference (sensor module X)
+        output_topic_suffix: "tof/multi"
+        publish_rate_ms: 100
+        # use: true
+        enable_8x8: true # 8x8 인덱스 사용 여부
+        calibration:
+          method: "Max" # "Max" or "Median"
+          sampling_count: 300
+          pass_min_value: 0.250 # raw sensor data "이상"인 경우 통과
+          pass_max_value: 0.370 # raw sensor data "이하"인 경우 통과
+          pass_diff_th: 0.030 # raw data min,max의 diff 가 30mm "이하"인 경우 통과
+          time_out_sec: 10.0 # 한쪽 캘리브레이션 완료 후 최대 대기시간, 실패 시 timeout fail 처리
+          data_non_renewal_count: 90
+
+      tof_multi_left:
+        output_topic_suffix: "tof/multi/left"
+        output_idx_topic_suffix: "tof/multi/left/idx_"
+        use: false # 센서 모듈 사용 여부
+        enable_target_frame_cloud: false # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: false # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: 30.0
+        sub_cell_idx_array:
+          [0, 3, 6, 17, 20, 23, 28, 31, 44, 47, 49, 52, 55, 57, 60, 63]
+        extrinsics:
+          fov: 45.0 # deg
+          tf_frame:
+            parent: "base_link"
+            child: "tof_multi_left_link"
+          translation:
+            x: 0.14316
+            y: 0.075446
+            z: 0.03
+          rotation: # deg
+            roll: 0.0
+            pitch: -5.0 # (-)가 들리는 방향
+            yaw: 15.0
+
+      tof_multi_right:
+        output_topic_suffix: "tof/multi/right"
+        output_idx_topic_suffix: "tof/multi/right/idx_"
+        use: false # 센서 모듈 사용 여부
+        enable_target_frame_cloud: false # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: false # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: 30.0
+        sub_cell_idx_array:
+          [1, 4, 7, 16, 19, 22, 24, 27, 40, 43, 48, 51, 54, 56, 59, 62]
+        extrinsics:
+          fov: 45.0 # deg
+          tf_frame:
+            parent: "base_link"
+            child: "tof_multi_right_link"
+          translation:
+            x: 0.14316
+            y: -0.075446
+            z: 0.03
+          rotation: # deg
+            roll: 0.0
+            pitch: -5.0 # (-)가 들리는 방향
+            yaw: -15.0
+
+      camera:
+        output_topic_suffix: "camera_object"
+        publish_rate_ms: 100
+        use: false # 센서 모듈 사용 여부
+        enable_target_frame_cloud: false # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: false # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: 30.0
+        pointcloud_resolution: 0.05
+        class_id_confidence_th: # 형식: "class id: confidence score"
+          - "0: 0" #cable
+          - "1: 0" #carpet [Unused]
+          - "2: 0" #clothes
+          - "3: 0" #liquid [Unused]
+          - "4: 0" #non_obstacle [Unused]
+          - "5: 0" #obstacle [Unused]
+          - "6: 0" #poop
+          - "7: 0" #scale
+          # - "8: 0"  #threshold [Unused]
+          # - "9: 0"  #person
+          - "10: 0" #dog [Unused]
+          - "11: 0" #cat [Unused]
+          - "12: 0" #chair
+          - "13: 0" #base
+          # - "14: 0" #shoes
+          - "15: 0" #electronic_device
+          - "16: 0" #dryingrack
+          - "17: 0" #bed
+          - "18: 0"
+          - "19: 0"
+          - "20: 0"
+        object_direction: true # 정방향(CCW+):True, 역방향(CW+):False
+        object_max_distance_m: 1.5 # 최대 장애물 거리 (해당 거리 이내의 장애물 정보만 처리)
+        object_ignore_pitch_th_deg: 3.0 # 객체인식 장애물 무시하는 pitch 각도 (절댓값)
+        extrinsics:
+          tf_frame:
+            parent: "base_link"
+            child: "tof_camera_link"
+          translation:
+            x: 0.15473
+            y: 0.0
+            z: 0.5331
+        logger:
+          use: true # 로깅 기능 사용 여부
+          margin:
+            distance_diff_m: 1.0
+
+      bottom_ir:
+        output_topic_suffix: "bottom_ir"
+        publish_rate_ms: 10
+        use: true # 센서 모듈 사용 여부
+        enable_target_frame_cloud: true # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: true # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: 30.0
+        extrinsics:
+          tf_frame:
+            parent: "base_link"
+            child: "bottom_ir_link"
+          distance: 0.15 # distance from robot center
+          angle: 50.0 # deg to next ir sensor (CW)
+
+      collision_front:
+        output_topic_suffix: "collision/front"
+        publish_rate_ms: 10
+        use: true # 센서 모듈 사용 여부
+        enable_target_frame_cloud: true # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: true # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: 30.0
+        extrinsics:
+          tf_frame:
+            parent: "base_link"
+            child: "collision_front_link"
+          distance: 0.19 # forward point offset (positive)
+
+      collision_rear:
+        output_topic_suffix: "collision/rear"
+        publish_rate_ms: 10
+        use: true # 센서 모듈 사용 여부
+        enable_target_frame_cloud: true # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: true # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: 30.0
+        extrinsics:
+          tf_frame:
+            parent: "base_link"
+            child: "collision_rear_link"
+          distance: -0.19 # backward point offset (negative)
+
+      depth_camera: # NU4100 depth image_raw -> pointcloud -> filtering -> costmap source
+        output_topic_suffix: "depth_camera"
+        publish_rate_ms: 66 # ~15Hz
+        use: true # 센서 모듈 사용 여부
+        enable_target_frame_cloud: true # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: false # 별도 static TF 불필요(URDF가 TF 제공)
+        reset_timeout_sec: 30.0
+        # extrinsics: # 별도 static tf 발행 필요 시 주석 해제
+        #   tf_frame:
+        #     parent: "base_link"
+        #     child: "depth_camera_link"
+        #   translation:
+        #     x: 0.177
+        #     y: 0.0
+        #     z: 0.26
+        #   rotation: # deg
+        #     roll: 0.0
+        #     pitch: 0.0
+        #     yaw: -2.865
+        tf_timeout_sec: 0.05 # 입력 stamp 기준 TF 변환 timeout (실패 시 latest 폴백)
+        conversion: # depth image(16UC1) -> raw pointcloud 변환
+          depth_scale: 0.001 # 16UC1(mm) -> m
+          range_min: 0.16 # [m]
+          range_max: 2.0 # [m]
+          row_step: 6 # down sampling (행)
+          col_step: 6 # down sampling (열)
+        filters: # 현재는 target frame 기준으로만 filtering 적용되도록 구현.
+          ransac_plane: # RANSAC 바닥 평면 제거. height_crop 보다 먼저 수행됨 (fit 편향 방지)
+            enable: true
+            distance_threshold: 0.02 # [m] 평면 위쪽 이 두께 이하 점 제거. 낮은 장애물 감지 하한과 trade-off (3cm 장애물 감지하려면 0.03 미만 필요)
+            max_iterations: 100 # RANSAC 샘플링 반복 횟수
+            eps_angle_deg: 10.0 # [deg] 수평 대비 바닥 평면 허용 기울기 (경사로/pitch 흡수 범위)
+            max_ground_offset: 0.05 # [m] 평면을 센서 xy 위치로 연장한 높이 허용치. 바닥 검증용 (박스 윗면 등 오제거 방지)
+            min_inlier_ratio: 0.05 # 전체 점 대비 바닥 inlier 최소 비율. 바닥 검증용
+            fallback_min_z: 0.02 # [m] 바닥 평면 미검출 시 단순 z-crop 폴백 높이 (0 이하 = 폴백 없음)
+          height_crop:
+            enable: true
+            min_z: 0.00 # map 좌표계 기준
+            max_z: 0.60 # map 좌표계 기준
+
+      empty: # use_tf2 = true 인 모드에서는 작동되지 않음
+        use: true # 센서 모듈 사용 여부
+        enable_target_frame_cloud: true # target frame 기준 통합 PointCloud 발행
+        enable_sensor_tf_cloud: false # TF 발행 + 해당 frame 기준 PointCloud 발행
+        reset_timeout_sec: -1.0 # 비활성화
+
+    use_sim_time: false
+################################
+#######  ToF Matrix idx  #######
+#                              #
+#       [00, 01, 02, 03]       #
+#       [04, 05, 06, 07]       #
+#       [08, 09, 10, 11]       #
+#       [12, 13, 14, 15]       #
+#                              #
+################################
+#######  Camera Object  ########
+######     Class ID      #######
+#
+#        00: 케이블
+#        01: 카펫
+#        02: 옷, 수건, 양말
+#        03: 액체
+#        04: 비장애물
+#        05: 장애물
+#        06: 동물 대변
+#        07: 체중계
+#        08: 문턱
+#        09: 사람
+#        10: 개
+#        11: 고양이
+#        12: 의자
+#        13: 선풍기, 원형책상, 기둥, 전등기둥
+#        14: 신발
+#        15: 전자기기 (노트북, 태블릿, 스마트폰)
+#        16: 건조대
+#
+################################
+###########  Bot IR  ###########
+######### < Top View > #########
+#                              #
+#              ff              #
+#          fl      fr          #
+#                              #
+#          bl      br          #
+#              bb              #
+#                              #
+################################

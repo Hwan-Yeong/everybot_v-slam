@@ -1,0 +1,106 @@
+cmake_minimum_required(VERSION 3.8)
+project(everybot_sensor_manager)
+
+set(CMAKE_BUILD_TYPE Release) #set(CMAKE_BUILD_TYPE Debug)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(everybot_custom_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_sensor_msgs REQUIRED)
+find_package(vision_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(yaml_cpp_vendor REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(yaml-cpp REQUIRED)
+
+include_directories(
+  include
+  ${PCL_INCLUDE_DIRS}
+)
+
+link_directories(${PCL_LIBRARY_DIRS} ${YAML_CPP_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+################################
+######## sensor_manager ########
+add_executable(sensor_manager
+  src/utils/pointcloud_generator.cpp
+  src/utils/frame_converter.cpp
+  src/utils/tof_utils.cpp
+  src/utils/multizone_tof_calibrator.cpp
+  src/utils/self_diagnosis.cpp
+  src/cloud_converter/cloud_converter_factory.cpp
+  src/cloud_converter/cloud_converter_strategy.cpp
+  src/cloud_converter/sensors/bottom_ir.cpp
+  src/cloud_converter/sensors/camera.cpp
+  src/cloud_converter/sensors/depth_camera.cpp
+  src/cloud_converter/sensors/tof_mono.cpp
+  src/cloud_converter/sensors/tof_multi.cpp
+  src/cloud_converter/virtual/collision.cpp
+  src/cloud_converter/empty_converter.cpp
+  src/sensor_manager_node.cpp
+  src/main.cpp
+)
+ament_target_dependencies(sensor_manager
+  rclcpp
+  std_msgs
+  sensor_msgs
+  everybot_custom_msgs
+  builtin_interfaces
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  tf2_sensor_msgs
+  vision_msgs
+  visualization_msgs
+  geometry_msgs
+  pcl_conversions
+  PCL
+  yaml-cpp
+)
+target_link_libraries(sensor_manager yaml-cpp)
+install(TARGETS sensor_manager
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+################################
+######## PARAM_MANAGER #########
+add_executable(param_setter
+  src/parameter_manager/param_setter.cpp
+  src/parameter_manager/main.cpp
+)
+ament_target_dependencies(param_setter
+  rclcpp
+  std_msgs
+)
+install(TARGETS param_setter
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+
+################################
+############ GENERAL ###########
+install(DIRECTORY include/
+  DESTINATION include
+)
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_package()

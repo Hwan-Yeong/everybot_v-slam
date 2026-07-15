@@ -1,0 +1,61 @@
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+import os
+
+def generate_launch_description():
+    param_file = LaunchConfiguration('everybot_lidar_params')
+
+    scan_params_declare = DeclareLaunchArgument(
+        'everybot_lidar_params',
+        default_value=os.path.join(
+            get_package_share_directory('everybot_lidar'),
+            'config',
+            'everybot_lidar_params.yaml'
+        ),
+        description='Path to everybot_lidar parameters file.'
+    )
+
+    scan_front_node = Node(
+        package='everybot_lidar',
+        executable='everybot_lidar',
+        name='everybot_lidar_front',
+        output='screen',
+        emulate_tty=True,
+        parameters=[param_file],
+        namespace='/',
+        remappings=[
+            ('/scan', '/scan_front'),  # '/scan'을 '/scan2'로 remap
+            ('/scan_error', '/error/f_code/scan_front'),  # '/scan'을 '/scan2'로 remap
+            ('/scan_state', '/scan_state_front'),
+            ('/scan_dirty', '/error/e_code/scan_dirty_front')
+        ],
+        respawn=True,
+        respawn_delay=1.0
+    )
+
+    scan_back_node = Node(
+        package='everybot_lidar',
+        executable='everybot_lidar',
+        name='everybot_lidar_back',
+        output='screen',
+        emulate_tty=True,
+        parameters=[param_file],
+        namespace='/',
+        remappings=[
+            ('/scan', '/scan_back'),  # '/scan'을 '/scan2'로 remap
+            ('/scan_error', '/error/f_code/scan_back'),  # '/scan'을 '/scan2'로 remap
+            ('/scan_state', '/scan_state_back'),
+            ('/scan_dirty', '/error/e_code/scan_dirty_back')
+        ],
+        respawn=True,
+        respawn_delay=1.0
+    )
+
+    return LaunchDescription([
+        scan_params_declare,
+        scan_front_node,
+        scan_back_node,
+    ])

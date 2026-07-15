@@ -1,0 +1,16 @@
+udp_interface:
+  ros__parameters:
+    tof_calib_timeout : 5.0
+    fan_control: # 0: 취침 / 1: 약풍 / 2: 중풍 / 3: 강풍 / 4: 터보
+      power:
+        auto_mapping: 2     # 우선순위 1
+        battery_overheat: 1 # 우선순위 2
+        ap_overheat: 1      # 우선순위 3
+      threshold:
+        ap_overheat:
+          on_celsius: 73.0  # double
+          off_celsius: 70.0 # double
+          duration_sec: 30  # int
+        battery_overheat:
+          on_celsius: 43    # int
+          off_celsius: 40   # int

@@ -1,0 +1,3 @@
+bool error_occurred
+uint8 count
+string error_code

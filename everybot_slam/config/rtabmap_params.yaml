@@ -1,0 +1,102 @@
+# =============================================================================
+# RTAB-Map 공통 파라미터 (mapping / localization 공용)
+#
+# 아키텍처:
+#   - 실시간 pose  : MCU odom (odom->base_link TF, IMU yaw 융합됨) 을 그대로 사용
+#                    -> visual odometry 노드 없음 (RK3588 CPU 절약, 회전 시 tracking loss 원천 차단)
+#   - SLAM 보정    : rtabmap 이 map->odom TF 만 발행 (drift 보정 + loop closure)
+#   - Loop closure : visual(BoW, RGB) 후보 탐색 + 2D LiDAR ICP 정밀 보정 (Reg/Strategy=2)
+#   - 2D grid map  : LiDAR 기반 (Nav2 호환), 3D cloud map 은 depth 기반 별도 발행
+#
+# 주의: 대문자로 시작하는 "Grp/Name" 형식 파라미터는 RTAB-Map 라이브러리 파라미터로
+#       반드시 문자열("")이어야 함.
+# =============================================================================
+rtabmap:
+  ros__parameters:
+    # ---------- Frames / TF ----------
+    frame_id: "base_link"
+    odom_frame_id: "odom"        # TF 기반 odometry 사용 (odom 토픽 구독 안 함)
+    map_frame_id: "map"
+    publish_tf: true             # map->odom 발행
+    tf_delay: 0.05
+    wait_for_transform: 0.3
+
+    # TF 기반 odom 사용 시 공분산 (MCU odom 은 covariance 를 채우지 않으므로 여기서 지정)
+    odom_tf_linear_variance: 0.001
+    odom_tf_angular_variance: 0.001
+
+    # ---------- 구독 설정 ----------
+    subscribe_depth: false
+    subscribe_rgb: false
+    subscribe_rgbd: true         # Jetson 의 rgbd_sync 가 만든 단일 rgbd_image 토픽
+    rgbd_cameras: 1              # [확장] 휠체어 3-cam: 3 으로 변경 + rgbd_image0~2 리맵
+    subscribe_scan: true
+    subscribe_odom_info: false
+
+    # 서로 다른 센서(카메라 15Hz / LiDAR 10Hz) 간 근사 동기화
+    approx_sync: true
+    approx_sync_max_interval: 0.15
+    sync_queue_size: 30
+    topic_queue_size: 10
+
+    # QoS: 네트워크 건너오는 센서 스트림은 best_effort(2)
+    qos_image: 2
+    qos_scan: 2
+    qos_camera_info: 2
+
+    # ---------- RTAB-Map 라이브러리 파라미터 (모두 문자열) ----------
+    # 평면 로봇 제약: z/roll/pitch 고정 (실내 AMR)
+    Reg/Force3DoF: "true"
+    Optimizer/Slam2D: "true"
+
+    # 그래프 갱신 주기: 1Hz 면 충분 (실시간 pose 는 odom 담당)
+    Rtabmap/DetectionRate: "1.0"
+
+    # 등록 전략: 2 = Visual 후보 + ICP(LiDAR) 정밀 보정
+    Reg/Strategy: "2"
+
+    # 이웃 노드 링크를 LiDAR ICP 로 재정밀화 (odom drift 억제)
+    RGBD/NeighborLinkRefining: "true"
+    # 공간 근접 기반 loop closure (같은 장소 재방문 감지, LiDAR 활용)
+    RGBD/ProximityBySpace: "true"
+    RGBD/ProximityMaxGraphDepth: "0"
+    RGBD/ProximityPathMaxNeighbors: "10"
+    RGBD/LocalRadius: "5.0"
+
+    # 이동량 기반 노드 추가 (정지 중 메모리 낭비 방지)
+    RGBD/AngularUpdate: "0.05"
+    RGBD/LinearUpdate: "0.05"
+    RGBD/OptimizeFromGraphEnd: "false"
+
+    # ---------- ICP (2D LiDAR scan) ----------
+    Icp/VoxelSize: "0.05"
+    Icp/MaxCorrespondenceDistance: "0.15"
+    Icp/MaxTranslation: "0.5"
+    Icp/Iterations: "30"
+    Icp/Epsilon: "0.001"
+    Icp/CorrespondenceRatio: "0.2"
+    Icp/PointToPlane: "false"
+
+    # ---------- Visual (loop closure 후보) ----------
+    # GFTT+BRIEF: ARM CPU 에서 가벼움 (SURF/SIFT 금지)
+    Kp/DetectorStrategy: "6"
+    Vis/FeatureType: "6"
+    Kp/MaxFeatures: "400"
+    Vis/MaxFeatures: "600"
+    Vis/MinInliers: "15"
+
+    # ---------- Occupancy Grid (Nav2 /map) ----------
+    # 0 = LiDAR scan 기반 2D grid (가장 안정적, AMCL 시절 맵과 유사 품질)
+    # 3D 시각화용 cloud_map/octomap 은 depth 로부터 별도 생성됨
+    Grid/Sensor: "0"
+    Grid/RangeMax: "8.0"
+    Grid/CellSize: "0.05"
+    Grid/RayTracing: "true"
+
+    # ---------- 메모리/성능 (RK3588) ----------
+    Mem/ImagePreDecimation: "1"    # 대역폭 문제 시 2 로 (이미지 1/2 축소 저장)
+    Mem/STMSize: "30"
+    Rtabmap/TimeThr: "700"         # 갱신 700ms 초과 시 메모리 전이 (실시간성 보호)
+    Mem/BinDataKept: "true"        # loop closure 검증용 이미지 보관
+
+    use_sim_time: false
